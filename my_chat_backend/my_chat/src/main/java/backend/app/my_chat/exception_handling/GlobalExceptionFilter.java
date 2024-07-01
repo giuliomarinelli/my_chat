@@ -37,4 +37,11 @@ public class GlobalExceptionFilter extends ResponseEntityExceptionHandler {
         ), HttpStatus.UNAUTHORIZED);
     }
 
+    @ExceptionHandler(NotFoundException.class)
+    public ResponseEntity<HttpErrorOutputDto> notFoundExceptionHandler(NotFoundException e) {
+        return new ResponseEntity<>(new HttpErrorOutputDto(
+                HttpStatus.NOT_FOUND, "Not Found", e.getMessage(), getPath()
+        ), HttpStatus.NOT_FOUND);
+    }
+
 }

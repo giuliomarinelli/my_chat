@@ -29,5 +29,4 @@ public record UserInputDto(
         String phoneNumber
 
 
-) {
-}
+) {}

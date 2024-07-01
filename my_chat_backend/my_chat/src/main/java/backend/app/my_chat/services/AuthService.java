@@ -4,6 +4,7 @@ import backend.app.my_chat.Models.dto.inputDto.UserInputDto;
 import backend.app.my_chat.Models.entities.User;
 import backend.app.my_chat.exception_handling.BadRequestException;
 import backend.app.my_chat.repositories.UserRepository;
+import com.eatthepath.otp.TimeBasedOneTimePasswordGenerator;
 import org.apache.commons.codec.binary.Base32;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -12,7 +13,11 @@ import org.springframework.stereotype.Service;
 
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
+import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.time.Duration;
+import java.time.Instant;
 
 @Service
 public class AuthService {
@@ -28,11 +33,27 @@ public class AuthService {
     private Long timeToActivate;
 
     private String generateBase32Secret() throws NoSuchAlgorithmException {
-        KeyGenerator keyGenerator = KeyGenerator.getInstance("HmacSHA256");
-        keyGenerator.init(256); // Dimensione della chiave
-        SecretKey secretKey = keyGenerator.generateKey();
+        byte[] buffer = new byte[16];
+
+        SecureRandom secureRandom = new SecureRandom();
+        secureRandom.nextBytes(buffer);
+
         Base32 base32 = new Base32();
-        return base32.encodeToString(secretKey.getEncoded());
+        return base32.encodeToString(buffer);
+    }
+
+    public String generateTotp(String base32Secret, int digits, int timeStepSeconds) throws NoSuchAlgorithmException, InvalidKeyException {
+        Base32 base32 = new Base32();
+        byte[] secretBytes = base32.decode(base32Secret);
+
+        SecretKey secretKey = new javax.crypto.spec.SecretKeySpec(secretBytes, "RAW");
+
+        TimeBasedOneTimePasswordGenerator totpGenerator =
+                new TimeBasedOneTimePasswordGenerator(Duration.ofSeconds(timeStepSeconds), digits);
+
+        Instant now = Instant.now();
+        int totp = totpGenerator.generateOneTimePassword(secretKey, now);
+        return String.valueOf(totp);
     }
 
     public User register(UserInputDto userInputDto) throws NoSuchAlgorithmException, BadRequestException {
@@ -52,5 +73,7 @@ public class AuthService {
 
 
     }
+
+
 
 }
