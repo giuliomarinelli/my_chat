@@ -74,6 +74,13 @@ public class AuthService {
 
     }
 
+    public String obscurePhoneNumber(String phoneNumber) {
+        String prefix = phoneNumber.substring(0, 3);
+        String suffix = phoneNumber.substring(phoneNumber.length() - 2);
+        String middle = phoneNumber.substring(3, phoneNumber.length() - 2);
+        String obscuredMiddle = "*".repeat(middle.length());
+        return prefix + obscuredMiddle + suffix;
+    }
 
 
 }

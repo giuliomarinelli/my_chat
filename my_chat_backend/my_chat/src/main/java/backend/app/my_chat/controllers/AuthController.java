@@ -8,7 +8,6 @@ import backend.app.my_chat.exception_handling.NotFoundException;
 import backend.app.my_chat.exception_handling.Validation;
 import backend.app.my_chat.repositories.UserRepository;
 import backend.app.my_chat.services.AuthService;
-import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
@@ -53,7 +52,8 @@ public class AuthController {
 
         System.out.println(otp);
 
-        return new ConfirmOutputDto(HttpStatus.OK, "Un sms con un codice di verifica è stato inviato");
+        return new ConfirmOutputDto(HttpStatus.OK, "Un sms con un codice di verifica è stato inviato" +
+                " al numero " + authService.obscurePhoneNumber(user.getPhoneNumber()));
 
     }
 
