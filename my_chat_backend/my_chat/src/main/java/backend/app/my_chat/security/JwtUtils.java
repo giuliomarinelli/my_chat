@@ -40,10 +40,10 @@ public class JwtUtils {
     @Value("${refresh_token.expiresIn}")
     private String refreshExp;
 
-    @Value("${preauthorization_token.expiresIn}")
+    @Value("${pre_authorization_token.secret}")
     private String preAuthorizationSecret;
 
-    @Value("${preauthorization_token.expiresIn}")
+    @Value("${pre_authorization_token.expiresIn}")
     private String preAuthorizationExp;
 
     @Autowired
@@ -123,7 +123,7 @@ public class JwtUtils {
                 .claim("restore", restore)
                 .issuedAt(new Date(System.currentTimeMillis()))
                 .expiration(new Date(System.currentTimeMillis() + exp))
-                .claim("jti", UUID.randomUUID())
+                .claim("jti", UUID.randomUUID().toString())
                 .signWith(Keys.hmacShaKeyFor(secret.getBytes()))
                 .compact();
 

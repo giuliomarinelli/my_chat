@@ -65,6 +65,8 @@ public class AuthController {
 
         Cookie[] cookies = req.getCookies();
 
+        System.out.println(Arrays.stream(cookies).toList());
+
         User user = userRepository.findValidUserById(userId, timeToActivate).orElseThrow(
                 () -> new NotFoundException("Utente con id='" + userId + "' non trovato")
         );
@@ -78,13 +80,10 @@ public class AuthController {
             case "auth" -> {
                 messageBody = "Il codice di verifica per accedere a my_chat è ";
                 if (cookies.length == 0) throw new UnauthorizedException("Pre Authorization Token non fornito");
-                if (Arrays.stream(cookies)
-                        .noneMatch(c -> c.getAttributes().containsKey("__pre_authorization_tkn"))) {
+                if (Arrays.stream(cookies).noneMatch(c -> c.getName().equals("__pre_authorization_tkn")))
                     throw new UnauthorizedException("Pre Authorization Token non fornito");
-                }
-
                 Cookie preAuthorizationToken = Arrays.stream(cookies)
-                        .filter(c -> c.getAttributes().containsKey("__pre_authorization_tkn")).findFirst().get();
+                        .filter(c -> c.getName().equals("__pre_authorization_tkn")).findFirst().get();
                 UUID _userId = jwtUtils.verifyPreAuthorizationTokenAndExtractUserId(preAuthorizationToken.getValue());
                 if (!userId.equals(_userId))
                     throw new UnauthorizedException("userId fornito non valido");
@@ -128,24 +127,52 @@ public class AuthController {
 
         if (cookies.length == 0) throw new UnauthorizedException("Pre Authorization Token non fornito");
         if (Arrays.stream(cookies)
-                .noneMatch(c -> c.getAttributes().containsKey("__pre_authorization_tkn"))) {
+                .noneMatch(c -> c.getName().equals("__pre_authorization_tkn"))) {
             throw new UnauthorizedException("Pre Authorization Token non fornito");
         }
 
         Cookie preAuthorizationToken = Arrays.stream(cookies)
-                .filter(c -> c.getAttributes().containsKey("__pre_authorization_tkn")).findFirst().get();
+                .filter(c -> c.getName().equals("__pre_authorization_tkn")).findFirst().get();
         UUID userId = jwtUtils.verifyPreAuthorizationTokenAndExtractUserId(preAuthorizationToken.getValue());
 
         User user = userRepository.findValidUserById(userId, timeToActivate).orElseThrow(
                 () -> new UnauthorizedException("Credenziali di accesso non valide. E' possibile " +
-                "che sia scaduto il tempo per inserire il codice a 6 cifre")
+                        "che sia scaduto il tempo per inserire il codice a 6 cifre")
         );
 
         TokenPair tokenPair = authService.loginStep2(otpInputDto.otp(), user);
 
+        Cookie accessToken = new Cookie("__access_tkn", tokenPair.getAccessToken());
+        accessToken.setPath("/");
+        accessToken.setDomain("localhost");
+        accessToken.setHttpOnly(true);
+        res.addCookie(accessToken);
 
+        Cookie refreshToken = new Cookie("__refresh_tkn", tokenPair.getRefreshToken());
+        refreshToken.setPath("/");
+        refreshToken.setDomain("localhost");
+        refreshToken.setHttpOnly(true);
+        res.addCookie(refreshToken);
+
+        Cookie _preAuthorizationToken = new Cookie("__pre_authorization_tkn", null);
+        _preAuthorizationToken.setMaxAge(0);
+        _preAuthorizationToken.setPath("/");
+        res.addCookie(_preAuthorizationToken);
+
+        return new ConfirmOutputDto(HttpStatus.OK, "Login completato con successo");
 
     }
 
-
+    @GetMapping("/account/logout")
+    public ConfirmOutputDto logout(HttpServletResponse res) {
+        Cookie accessToken = new Cookie("__access_tkn", null);
+        accessToken.setMaxAge(0);
+        accessToken.setPath("/");
+        Cookie refreshToken = new Cookie("__refresh_tkn", null);
+        refreshToken.setMaxAge(0);
+        refreshToken.setPath("/");
+        res.addCookie(accessToken);
+        res.addCookie(refreshToken);
+        return new ConfirmOutputDto(HttpStatus.OK, "Logout effettuato con successo");
+    }
 }
