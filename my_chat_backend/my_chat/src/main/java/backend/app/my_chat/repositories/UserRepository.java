@@ -18,4 +18,8 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     @Query(value = "SELECT * FROM users u WHERE u.id = :id AND " +
             "(u.active = true OR (EXTRACT(EPOCH FROM now()) * 1000 - u.created_at) < :timeToActivate)", nativeQuery = true)
     Optional<User> findValidUserById(UUID id, Long timeToActivate);
+
+    @Query(value = "SELECT * FROM users u WHERE u.id = :id AND " +
+            "u.active = false AND (EXTRACT(EPOCH FROM now()) * 1000 - u.created_at) < :timeToActivate", nativeQuery = true)
+    Optional<User> findValidInactiveUserById(UUID id, Long timeToActivate);
 }

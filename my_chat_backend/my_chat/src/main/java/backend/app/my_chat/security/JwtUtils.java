@@ -40,6 +40,12 @@ public class JwtUtils {
     @Value("${refresh_token.expiresIn}")
     private String refreshExp;
 
+    @Value("${preauthorization_token.expiresIn}")
+    private String preAuthorizationSecret;
+
+    @Value("${preauthorization_token.expiresIn}")
+    private String preAuthorizationExp;
+
     @Autowired
     @Qualifier("time_to_activate")
     private Long timeToActivate;
@@ -79,10 +85,10 @@ public class JwtUtils {
                     UnauthorizedException::new
             );
 
-        return new TokenPair(
-                generateToken(u, TokenType.ACCESS_TOKEN, restore),
-                generateToken(u, TokenType.REFRESH_TOKEN, restore)
-                );
+            return new TokenPair(
+                    generateToken(u, TokenType.ACCESS_TOKEN, restore),
+                    generateToken(u, TokenType.REFRESH_TOKEN, restore)
+            );
 
         } catch (Exception exception) {
             throw new UnauthorizedException("Invalid refresh token");
@@ -102,6 +108,10 @@ public class JwtUtils {
             case TokenType.REFRESH_TOKEN -> {
                 exp = Long.parseLong(refreshExp);
                 secret = refreshSecret;
+            }
+            case TokenType.PRE_AUTHORIZATION_TOKEN -> {
+                exp = Long.parseLong(preAuthorizationExp);
+                secret = preAuthorizationSecret;
             }
             default -> throw new UnauthorizedException();
 
@@ -173,6 +183,17 @@ public class JwtUtils {
         } catch (Exception e) {
             throw new UnauthorizedException("Invalid refresh token");
         }
+    }
+
+    public UUID verifyPreAuthorizationTokenAndExtractUserId(String preAuthorizationToken) {
+        return UUID.fromString(
+                Jwts.parser()
+                        .verifyWith(Keys.hmacShaKeyFor(preAuthorizationSecret.getBytes()))
+                        .build()
+                        .parseSignedClaims(preAuthorizationToken)
+                        .getPayload()
+                        .getSubject()
+        );
     }
 
 
