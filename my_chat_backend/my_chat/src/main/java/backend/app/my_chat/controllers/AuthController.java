@@ -65,8 +65,6 @@ public class AuthController {
 
         Cookie[] cookies = req.getCookies();
 
-        System.out.println(Arrays.stream(cookies).toList());
-
         User user = userRepository.findValidUserById(userId, timeToActivate).orElseThrow(
                 () -> new NotFoundException("Utente con id='" + userId + "' non trovato")
         );
